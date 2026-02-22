@@ -167,7 +167,7 @@ This project builds the complete data infrastructure to answer all of these ques
 
 ---
 
-## Key Design Decisions (Interview-Ready)
+## Key Design Decisions 
 
 ### Why Medallion Architecture?
 Raw data lands in Bronze untouched — if a transformation bug is found, you reprocess from Bronze without re-ingesting from the source (which may be transient or expensive to re-query). Silver makes data trustworthy and conformed. Gold encodes business meaning and is shaped for consumption.
