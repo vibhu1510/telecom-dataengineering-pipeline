@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: fact_calls
+    description: >
+      Central call fact table. Grain = one row per call attempt.
+      Star schema: surrogate FKs to dim_customers, dim_towers, dim_date.
+    columns:
+      - name: call_fact_key
+        tests:
+          - unique
+          - not_null
+      - name: call_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_key
+              severity: warn   # warn (not error) because some calls have unknown customers
+      - name: tower_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_towers')
+              field: tower_key
+              severity: warn
+      - name: call_date_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: call_duration_seconds
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: revenue_usd
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: call_count
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "= 1"

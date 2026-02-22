@@ -1,0 +1,58 @@
+name: telecom_data_platform
+version: "1.0.0"
+config-version: 2
+
+profile: telecom
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  telecom_data_platform:
+
+    bronze:
+      # Bronze models are views over raw Iceberg tables — no compute wasted on re-storing
+      +materialized: view
+      +schema: bronze
+      +tags: ["bronze", "raw"]
+
+    silver:
+      # Silver models are incremental tables — only process new data each run
+      +materialized: incremental
+      +incremental_strategy: merge
+      +schema: silver
+      +tags: ["silver", "cleansed"]
+      +on_schema_change: append_new_columns
+
+    gold:
+      # Gold models are full tables refreshed daily (small enough to be cheap)
+      dimensions:
+        +materialized: table
+        +schema: gold
+        +tags: ["gold", "dimension"]
+      facts:
+        +materialized: incremental
+        +incremental_strategy: merge
+        +schema: gold
+        +tags: ["gold", "fact"]
+      aggregates:
+        +materialized: table
+        +schema: gold
+        +tags: ["gold", "aggregate"]
+        +post-hook: "ANALYZE {{ this }}"
+
+vars:
+  # Default lookback window for incremental models
+  incremental_lookback_days: 3
+  # Revenue per MB of data (used in Gold calculations)
+  data_revenue_per_mb: 0.001
+  # SLA thresholds
+  tower_load_alert_pct: 85
+  call_drop_rate_alert_pct: 2.0

@@ -1,0 +1,76 @@
+version: 2
+
+models:
+  - name: silver_calls
+    description: >
+      Cleansed and conformed voice call records. Each row represents one call attempt
+      (successful or failed). Deduplication applied; types cast; result codes decoded.
+    columns:
+      - name: call_id
+        description: Unique call event identifier (from Kafka event_id)
+        tests:
+          - unique
+          - not_null
+      - name: call_start_ts
+        tests:
+          - not_null
+      - name: caller_phone
+        tests:
+          - not_null
+      - name: tower_id
+        tests:
+          - not_null
+      - name: call_duration_seconds
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: call_status
+        tests:
+          - accepted_values:
+              values: ["SUCCESS", "USER_BUSY", "CALL_REJECTED", "NETWORK_FAILURE",
+                       "NETWORK_OUT_OF_ORDER", "TEMPORARY_FAILURE", "UNKNOWN_NULL"]
+      - name: revenue_usd
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: silver_customers
+    description: >
+      Current customer state from CRM system. One row per active customer.
+      PII fields preserved here; masking applied at Gold layer.
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: plan_code
+        tests:
+          - not_null
+      - name: is_active
+        tests:
+          - not_null
+      - name: plan_monthly_fee_usd
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+
+  - name: silver_network_probes
+    description: >
+      Cleansed tower probe measurements with derived health indicators.
+    columns:
+      - name: probe_id
+        tests:
+          - unique
+          - not_null
+      - name: tower_id
+        tests:
+          - not_null
+      - name: load_pct
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "BETWEEN 0 AND 100"
+      - name: load_status
+        tests:
+          - accepted_values:
+              values: ["NORMAL", "ELEVATED", "WARNING", "CRITICAL"]

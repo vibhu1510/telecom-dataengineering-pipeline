@@ -1,0 +1,20 @@
+telecom:
+  target: dev
+  outputs:
+    dev:
+      type: trino
+      method: none
+      host: localhost
+      port: 8084
+      database: iceberg
+      schema: silver
+      threads: 4
+
+    prod:
+      type: trino
+      method: none
+      host: trino
+      port: 8080
+      database: iceberg
+      schema: silver
+      threads: 8
